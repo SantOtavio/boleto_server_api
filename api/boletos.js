@@ -77,18 +77,8 @@ router.put("/:id", (req, res) => {
     if (boletoAtualizado.constructor.name == "Error") {
         return res.status(400).send(boletoAtualizado.message);
     }
-    boleto.id = boletoAtualizado.id;
-    boleto.valor = boletoAtualizado.valor;
-    boleto.iduser = boletoAtualizado.iduser;
-    boleto.idpessoa = boletoAtualizado.idpessoa;
-    boleto.statusboleto = boletoAtualizado.statusboleto;
-    boleto.nomepessoa = boletoAtualizado.nomepessoa;
-    res.json(boleto);
+    res.json(boletoAtualizado);
 });
-
-module.import = {
-    router: router
-}
 
 module.exports = {
     router,
