@@ -2,8 +2,6 @@ const express = require("express");
 const res = require("express/lib/response");
 const router = express.Router();
 
-//res.status(400).send("conteudo")
-
 let listaPessoas = [];
 
 function listarPessoas() {
@@ -16,14 +14,17 @@ function listarPessoasId(req) {
   return pessoa;
 }
 
-function cadastrarPessoas(req) {
-  const pessoa = req.body;
-  if (!pessoa.nome || !pessoa.cpf) {
-    return 1;
-  } else {
+function cadastrarPessoas(pessoa) {
+  if (!pessoa.nome) {
+    return new Error("Nome não informado!");
+  } else if (!pessoa.cpf) {
+    return new Error("CPF não informado!");
+  } else if (pessoa.cpf && pessoa.nome) {
     pessoa.id = `${listaPessoas.length + 1}`;
     listaPessoas.push(pessoa);
     return pessoa;
+  } else {
+    return new Error("Não foi possível cadastrar!");
   }
 }
 
@@ -51,14 +52,11 @@ router.get("/:id", (req, res) => {
 });
 
 router.post("/", (req, res) => {
-  const pessoa = req.body;
-  if (!pessoa.nome || !pessoa.cpf) {
-    res.status(400).send("Cpf ou Nome não inseridos!")
-  } else {
-    pessoa.id = `${listaPessoas.length + 1}`;
-    listaPessoas.push(pessoa);
-    res.json(pessoa);
+  const pessoa = cadastrarPessoas(req.body);
+  if (pessoa.constructor.name == "Error") {
+    return res.status(400).send(pessoa.message);
   }
+  res.json(pessoa);
 });
 
 router.put("/:id", (req, res) => {
