@@ -1,70 +1,84 @@
-const express = require("express");
-const res = require("express/lib/response");
-const router = express.Router();
+class Usuarios {
+  _listaUsuarios;
+  _router;
 
-let listaUsuarios = [];
+  get router() {
+    return this._router;
+  }
 
-function listarUsuarios() {
-    return listaUsuarios;
-}
+  constructor(_router, _listaUsuarios) {
+    this._router = _router;
+    this._listaUsuarios = _listaUsuarios;
+    this._createRoutes();
+  }
 
-function listarUsuariosId(id) {
-    const usuario = listaUsuarios.find((p) => p.id == id);
-    return usuario;
-}
+  _createRoutes() {
+    this.router.get("/", (req, res) => {
+      res.json(listaUsuarios());
+    });
 
-function cadastrarUsuario(usuario) {
+    this.router.get("/:id", (req, res) => {
+      const id = req.params.id;
+      res.json(listarUsuariosId(id));
+    });
+
+    this.router.post("/", (req, res) => {
+      const usuario = cadastrarUsuario(req.body);
+      if (usuario.constructor.name == "Error") {
+        return res.status(400).send(usuario.message);
+      }
+      res.json(usuario);
+    });
+
+    this.router.put("/:id", (req, res) => {
+      res.json(substituirUsuarios(req));
+    });
+
+    this.router.delete("/:id", (req, res) => {
+      res.json(deletarUsuario(req));
+    });
+  }
+
+  listarUsuarios() {
+    return this._listaUsuarios;
+  }
+
+  listarUsuariosId(id) {
+    return this._listaUsuarios.find((p) => p.id == id);
+  }
+
+  _cadastrarUsuario(usuario) {
     if (!usuario.nome) {
-        return new Error("Nome não informado!");
+      return new Error("Nome não informado!");
     } else if (!usuario.senha) {
-        return new Error("Senha não informada!");
+      return new Error("Senha não informada!");
     } else if (usuario.senha && usuario.nome) {
-        usuario.id = `${listaUsuarios.length + 1}`;
-        listaUsuarios.push(usuario);
-        return usuario;
+      usuario.id = `${this._listaUsuarios.length + 1}`;
+      this._listaUsuarios.push(usuario);
+      return usuario;
     } else {
-        return new Error("Não foi possível cadastrar!");
+      return new Error("Não foi possível cadastrar!");
     }
-}
+  }
 
-function substituirUsuarios(req) {
+  _substituirUsuarios(req) {
     const id = req.params.id;
     const usuario = req.body;
-    const index = listaUsuarios.findIndex((p) => p.id == id);
-    listaUsuarios[index] = pessoa;
+    const index = this._listaUsuarios.findIndex((p) => p.id == id);
+    this._listaUsuarios[index] = pessoa;
     return usuario;
+  }
+
+  _deletarUsuario(req) {
+    const id = req.params.id;
+    const index = this._listaUsuarios.findIndex((p) => p.id == id);
+    this._listaUsuarios.splice(index, 1);
+    return this._listaUsuarios;
+  }
 }
 
-function deletarUsuario(req) {
-    const id = req.params.id;
-    const index = listaUsuarios.findIndex((p) => p.id == id);
-    listaUsuarios.splice(index, 1);
-    return listaUsuarios;
-}
+const express = require("express");
+const router = express.Router();
+const { listaUsuarios } = require("./database");
 
-router.get("/", (req, res) => {
-    res.json(listaUsuarios());
-});
-
-router.get("/:id", (req, res) => {
-    const id = req.params.id;
-    res.json(listarUsuariosId(id));
-});
-
-router.post("/", (req, res) => {
-    const usuario = cadastrarUsuario(req.body);
-    if (usuario.constructor.name == "Error") {
-        return res.status(400).send(usuario.message);
-    }
-    res.json(usuario);
-});
-
-router.put("/:id", (req, res) => {
-    res.json(substituirUsuarios(req));
-});
-
-router.delete("/:id", (req, res) => {
-    res.json(deletarUsuario(req));
-});
-
-module.exports = { router };
+module.exports = new Usuarios(router, listaUsuarios);

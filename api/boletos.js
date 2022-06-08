@@ -1,85 +1,97 @@
-const express = require("express");
-const res = require("express/lib/response");
-const router = express.Router();
-let pessoa = require("./pessoas");
-let usuario = require("./usuarios");
+class Boletos {
+  _listaBoletos;
+  _router;
+  pessoa_usuario;
 
+  get router() {
+    return this._router;
+  }
 
-let listaBoletos = [];
+  constructor(_router, _listaBoletos, pessoa_usuario) {
+    this._router = _router;
+    this._listaBoletos = _listaBoletos;
+    this.pessoa_usuario = pessoa_usuario;
+    this._createRoutes();
+  }
 
-function listarBoletos() {
+  _createRoutes() {
+    this.router.get("/", (req, res) => {
+      res.json(listarBoletos());
+    });
+
+    this.router.get("/:id", (req, res) => {
+      res.json(listarBoletosId(req));
+    });
+
+    this.router.get("/pessoa/:id", (req, res) => {
+      res.json(listarBoletosIdPessoa(req));
+    });
+
+    this.router.post("/", (req, res) => {
+      const boleto = this._criarBoletos(req.body);
+      if (boleto.constructor.name == "Error") {
+        return res.status(400).send(boleto.message);
+      }
+      res.json(boleto);
+    });
+
+    this.router.put("/:id", (req, res) => {
+      const boleto = listarBoletosId(req);
+      if (!boleto) {
+        return res.status(404).send("Boleto não encontrado!");
+      }
+      const boletoAtualizado = criarBoletos(req.body);
+      if (boletoAtualizado.constructor.name == "Error") {
+        return res.status(400).send(boletoAtualizado.message);
+      }
+      res.json(boletoAtualizado);
+    });
+  }
+
+  _listarBoletos() {
     return listaBoletos;
-}
+  }
 
-function listarBoletosId(req) {
+  _listarBoletosId(req) {
     const id = req.params.id;
     const boleto = listaBoletos.find((b) => b.id == id);
     return boleto;
-}
+  }
 
-function listarBoletosIdPessoa(req) {
+  _listarBoletosIdPessoa(req) {
     const id = req.params.id;
     const boleto = listaBoletos.filter((b) => b.idPessoa == id);
     return boleto;
-}
+  }
 
-function criarBoletos(boleto) {
+  _criarBoletos(boleto) {
     if (boleto.valor <= 0) {
-        return new Error("Valor não pode ser menor ou igual a zero!");
+      return new Error("Valor não pode ser menor ou igual a zero!");
     } else if (!boleto.iduser) {
-        return new Error("Id do usuário não informado!");
+      return new Error("Id do usuário não informado!");
     } else if (!boleto.idpessoa) {
-        return new Error("Id da pessoa não informado!");
+      return new Error("Id da pessoa não informado!");
     } else if (!boleto.statusboleto) {
-        return new Error("Status do boleto não informado!");
+      return new Error("Status do boleto não informado!");
     } else {
-        let pessoaTemp = pessoa.listarPessoasId(boleto.idpessoa);
-        if (!pessoaTemp) {
-            return new Error("Pessoa não encontrada!");
-        }
-        let usuarioTemp = usuario.listarUsuariosId(boleto.iduser);
-        if (!usuarioTemp) {
-            return new Error("Usuário não encontrado!");
-        }
-        boleto.nomepessoa = pessoa.nome;
-        boleto.id = `${listaBoletos.length + 1}`;
-        listaBoletos.push(boleto);
-        return boleto;
+      let pessoaTemp = this.pessoa_usuario.listarPessoaId(boleto.idpessoa);
+      if (!pessoaTemp) {
+        return new Error("Pessoa não encontrada!");
+      }
+      let usuarioTemp = this.pessoa_usuario.listarUsuariosId(boleto.iduser);
+      if (!usuarioTemp) {
+        return new Error("Usuário não encontrado!");
+      }
+      boleto.nomepessoa = pessoaTemp.nome;
+      boleto.id = `${listaBoletos.length + 1}`;
+      listaBoletos.push(boleto);
+      return boleto;
     }
+  }
 }
+const express = require("express");
+const router = express.Router();
+const { listaBoletos } = require("./database");
+const pessoa_usuario = require("./pessoa-usuario");
 
-router.get("/", (req, res) => {
-    res.json(listarBoletos());
-});
-
-router.get("/:id", (req, res) => {
-    res.json(listarBoletosId(req));
-});
-
-router.get("/pessoa/:id", (req, res) => {
-    res.json(listarBoletosIdPessoa(req));
-});
-
-router.post("/", (req, res) => {
-    const boleto = criarBoletos(req.body);
-    if (boleto.constructor.name == "Error") {
-        return res.status(400).send(boleto.message);
-    }
-    res.json(boleto);
-});
-
-router.put("/:id", (req, res) => {
-    const boleto = listarBoletosId(req);
-    if (!boleto) {
-        return res.status(404).send("Boleto não encontrado!");
-    }
-    const boletoAtualizado = criarBoletos(req.body);
-    if (boletoAtualizado.constructor.name == "Error") {
-        return res.status(400).send(boletoAtualizado.message);
-    }
-    res.json(boletoAtualizado);
-});
-
-module.exports = {
-    router,
-};
+module.exports = new Boletos(router, listaBoletos, pessoa_usuario);
