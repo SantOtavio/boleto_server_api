@@ -15,16 +15,17 @@ class Boletos {
   }
 
   _createRoutes() {
-    this.router.get("/", (req, res) => {
-      res.json(listarBoletos());
+    this.router.get("/", (req , res) => {
+      res.json(this._listarBoletos());
     });
 
     this.router.get("/:id", (req, res) => {
-      res.json(listarBoletosId(req));
+      res.json(this._listarBoletosId(req));
     });
 
     this.router.get("/pessoa/:id", (req, res) => {
-      res.json(listarBoletosIdPessoa(req));
+      const id = req.params.id;
+      res.json(this.pessoa_usuario.listarBoletosIdPessoa(id));
     });
 
     this.router.post("/", (req, res) => {
@@ -55,12 +56,6 @@ class Boletos {
   _listarBoletosId(req) {
     const id = req.params.id;
     const boleto = listaBoletos.find((b) => b.id == id);
-    return boleto;
-  }
-
-  _listarBoletosIdPessoa(req) {
-    const id = req.params.id;
-    const boleto = listaBoletos.filter((b) => b.idPessoa == id);
     return boleto;
   }
 
